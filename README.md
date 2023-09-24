@@ -39,7 +39,7 @@ To set up and run the RecordWarden backend, follow these steps:
    
 ## Basic Flowchart of the Dapp
 
-![eVaultpop](https://github.com/AnuPlayz/RecordWarden/assets/120038186/8ba10437-120f-4672-ae85-c21a45368a38)
+![eVault](https://github.com/AnuPlayz/RecordWarden/assets/120038186/9e0e7e86-f2cd-4c1c-9ea2-a7acad593144)
 
 ## Contributing
 
