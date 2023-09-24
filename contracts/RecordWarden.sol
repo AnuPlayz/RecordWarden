@@ -41,6 +41,12 @@ contract RecordWarden is Permissions {
 
     event CaseCreated(Case);
     event CaseUpdated(Case);
+    event DocumentDeleted(Document);
+    event DocumentCreated(Document);
+    event DocumentUpdated(Document);
+
+
+
 
     constructor() {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
@@ -165,6 +171,8 @@ contract RecordWarden is Permissions {
 
         // Store the document in the mapping
         documents[docId] = newDocument;
+        
+        emit DocumentCreated(newDocument);
 
         return newDocument;
     }
@@ -214,5 +222,22 @@ contract RecordWarden is Permissions {
         string memory title
     ) public onlyDocLawyerOrJudge(docId) {
         documents[docId].title = title;
+        emit DocumentUpdated(documents[docId]);
     }
+
+    function changeDocumentDescription(
+        uint256 docId,
+        string memory description
+    ) public onlyDocLawyerOrJudge(docId) {
+        documents[docId].description = description;
+        emit DocumentUpdated(documents[docId]);
+
+    }
+
+    function deleteDocument(uint256 docId) public onlyDocLawyerOrJudge(docId) {
+        require(documents[docId].id == docId, "Document does not exist");   
+        emit DocumentDeleted(documents[docId]);
+        delete documents[docId];   
+    }
+    
 }
