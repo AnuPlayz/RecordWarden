@@ -37,6 +37,10 @@ To set up and run the RecordWarden backend, follow these steps:
     - npm run source
     - npm run deploy
    
+## Basic Flowchart of the Dapp
+
+![flowchart](C:\sem3\Projects\RecordWarden\images\eVaultpop.png)
+
 ## Contributing
 
 We welcome contributions to enhance the functionality and security of RecordWarden. Feel free to submit issues or pull requests to help make this project even better.
