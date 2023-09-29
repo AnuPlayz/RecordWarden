@@ -2,31 +2,37 @@ import { ethers } from "hardhat";
 
 const wait = (ms: number) => new Promise(r => setTimeout(r, ms))
 
+/**
+ * Deploys the RecordWarden contract, grants lawyer role to an admin, creates a case for Ani,
+ * adds evidence to the case and logs the case details.
+ */
 async function main() {
-  const us = "0xc9B0b0075CC479B277f721C76dAca7A9adc3f023"
+  const admin = "0xc9B0b0075CC479B277f721C76dAca7A9adc3f023"
 
   const RecordWarden = await ethers.deployContract("RecordWarden");
   await RecordWarden.waitForDeployment();
   await wait(3000)
 
   let addr = await RecordWarden.getAddress()
-  await wait(3000)
-  console.log(`Deployed at: ${addr}`)
+  console.log("RecordWarden deployed to:", addr);
 
-  console.log("Giving Lawyer & Judge Role to admin")
-  await RecordWarden.grantLawyerRole(us)
-  await RecordWarden.grantJudgeRole(us)
-  await wait(3000)
-  console.log("ok now we have lawyer role, we make a case now")
+  console.log("Granting lawyer role to", admin)
+  let addLawyer = await RecordWarden.addLawyer(admin)
+  await addLawyer.wait(2)
+  console.log("Lawyer role granted to", admin)
 
-  let meow = await RecordWarden.createCase("ur mom is a case", us)
-  await wait(3000)
-  console.log("Case has been created")
-  
-  console.log("Adding document")
-  await RecordWarden.addDocument(1, "Meow", "meow meow", "ipfs://data", true)
-  await wait(3000)
-  console.log("Added Document")
+  console.log("Creating a case for Ani")
+  let createCase = await RecordWarden.createCase("Ani stole a buggati", admin)
+  await createCase.wait(2)
+  console.log("Case created for Ani")
+
+  let thisCase = await RecordWarden.cases(0)
+  console.log("Case details:", thisCase)
+
+  console.log("Adding evidence to case")
+  let addEvidence = await RecordWarden.addCaseDocument(0, "ani.png", "bafybeiaqfndiuqfinovdjr7vrecruvm3csfofitl7swpyfvdr3uvwzqmsu")
+  await addEvidence.wait(2)
+  console.log("Evidence added to case")
 }
 
 // We recommend this pattern to be able to use async/await everywhere

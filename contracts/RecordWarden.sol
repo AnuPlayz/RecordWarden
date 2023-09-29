@@ -10,234 +10,381 @@ enum CaseStatus {
 
 struct Document {
     uint256 id;
-    uint256[] cases;
-    string title;
-    string description;
-    address uploadedBy;
+    string name;
+    string cid;
+    address[] authorized;
     uint256 uploadedAt;
-    string content; //IPFS Url
-    //Permissions
-    bool isPublic;
+    address uploadedBy;
 }
 
 struct Case {
     uint256 id;
     string description;
-    address[] lawyers;
-    uint256 creationDate;
-    uint256 updatedDate;
     CaseStatus status;
+    address client;
+    uint256 createdAt;
+    uint256 closedAt;
+    uint256 updatedAt;
+    uint256[] documents;
+    address[] lawyers;
+}
+
+struct User {
+    string name;
+    string username;
+    string avatar;
+    string bio;
+    string location;
+    string email;
 }
 
 contract RecordWarden is Permissions {
     bytes32 public constant LawyerRole = keccak256("Lawyer");
     bytes32 public constant JudgeRole = keccak256("Judge");
+    bytes32 public constant DetectiveRole = keccak256("Detective");
 
-    uint256 public totalCases = 0;
-    uint256 public totalDocuments = 0;
+    mapping(address => User) public users;
+    mapping(uint256 => Case) public cases;
+    mapping(uint256 => Document) private documents;
 
-    mapping(uint256 => Document) documents;
-    mapping(uint256 => Case) cases;
+    uint256 public caseCount;
+    uint256 public documentCount;
 
-    event CaseCreated(Case);
-    event CaseUpdated(Case);
-    event DocumentDeleted(Document);
-    event DocumentCreated(Document);
-    event DocumentUpdated(Document);
+    event CaseCreated(uint256 indexed id, address indexed lawyer, Case c);
+    event CaseClosed(uint256 indexed id, address indexed lawyer, Case c);
+    event CaseUpdated(uint256 indexed id, address indexed lawyer, Case c);
 
-
-
+    event UserCreated(address indexed user, User u);
+    event UserUpdated(address indexed user, User u);
 
     constructor() {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
 
-    function grantLawyerRole(address user) public onlyRole(DEFAULT_ADMIN_ROLE) {
-        grantRole(LawyerRole, user);
-    }
-
-    function grantJudgeRole(address user) public onlyRole(DEFAULT_ADMIN_ROLE) {
-        grantRole(JudgeRole, user);
-    }
-
-    function getNextCaseId() private returns (uint256) {
-        totalCases++;
-        return totalCases;
-    }
-
-    function createCase(
-        string memory description,
-        address lawyer
-    ) public onlyRole(LawyerRole) returns (Case memory) {
-        uint256 id = getNextCaseId();
-        address[] memory lawyersArray = new address[](1);
-        lawyersArray[0] = lawyer;
-
-        Case memory creatingCase = Case(
-            id,
-            description,
-            lawyersArray,
-            block.timestamp,
-            block.timestamp,
-            CaseStatus.Open
+    //Admin Functions
+    function addLawyer(address lawyer) external {
+        require(
+            hasRole(DEFAULT_ADMIN_ROLE, msg.sender),
+            "Must have admin role to add lawyer"
         );
-        cases[id] = creatingCase;
 
-        emit CaseCreated(creatingCase);
-
-        return creatingCase;
+        _setupRole(LawyerRole, lawyer);
     }
 
-    modifier onlyCaseLawyerOrJudge(uint256 caseId) {
-        bool isLawyer = false;
-        bool isJudge = false;
+    function deleteLawyer(address lawyer) external {
+        require(
+            hasRole(DEFAULT_ADMIN_ROLE, msg.sender),
+            "Must have admin role to delete lawyer"
+        );
 
-        // Check if the msg.sender is a lawyer
-        for (uint256 i = 0; i < cases[caseId].lawyers.length; i++) {
-            if (cases[caseId].lawyers[i] == msg.sender) {
-                isLawyer = true;
+        revokeRole(LawyerRole, lawyer);
+    }
+
+    function addJudge(address judge) external {
+        require(
+            hasRole(DEFAULT_ADMIN_ROLE, msg.sender),
+            "Must have admin role to add judge"
+        );
+
+        _setupRole(JudgeRole, judge);
+    }
+
+    function deleteJudge(address judge) external {
+        require(
+            hasRole(DEFAULT_ADMIN_ROLE, msg.sender),
+            "Must have admin role to delete judge"
+        );
+
+        revokeRole(JudgeRole, judge);
+    }
+
+    function addDetective(address detective) external {
+        require(
+            hasRole(DEFAULT_ADMIN_ROLE, msg.sender),
+            "Must have admin role to add detective"
+        );
+
+        _setupRole(DetectiveRole, detective);
+    }
+
+    function deleteDetective(address detective) external {
+        require(
+            hasRole(DEFAULT_ADMIN_ROLE, msg.sender),
+            "Must have admin role to delete detective"
+        );
+
+        revokeRole(DetectiveRole, detective);
+    }
+
+    //User Functions
+    function createUser(
+        string memory name,
+        string memory username,
+        string memory avatar,
+        string memory bio,
+        string memory location,
+        string memory email
+    ) external {
+        require(
+            bytes(users[msg.sender].username).length == 0,
+            "User already exists"
+        );
+        require(
+            bytes(users[msg.sender].username).length == 0,
+            "Username already taken"
+        );
+
+        users[msg.sender] = User(name, username, avatar, bio, location, email);
+        emit UserCreated(msg.sender, users[msg.sender]);
+    }
+
+    function updateUserName(string memory name) external {
+        users[msg.sender].name = name;
+        emit UserUpdated(msg.sender, users[msg.sender]);
+    }
+
+    function updateUserUsername(string memory username) external {
+        require(
+            bytes(users[msg.sender].username).length == 0,
+            "Username already taken"
+        );
+
+        users[msg.sender].username = username;
+        emit UserUpdated(msg.sender, users[msg.sender]);
+    }
+
+    function updateUserAvatar(string memory avatar) external {
+        users[msg.sender].avatar = avatar;
+        emit UserUpdated(msg.sender, users[msg.sender]);
+    }
+
+    function updateUserBio(string memory bio) external {
+        users[msg.sender].bio = bio;
+        emit UserUpdated(msg.sender, users[msg.sender]);
+    }
+
+    function updateUserLocation(string memory location) external {
+        users[msg.sender].location = location;
+        emit UserUpdated(msg.sender, users[msg.sender]);
+    }
+
+    function updateUserEmail(string memory email) external {
+        users[msg.sender].email = email;
+        emit UserUpdated(msg.sender, users[msg.sender]);
+    }
+
+    //Case Functions
+    function createCase(string memory description, address client) external {
+        require(
+            hasRole(LawyerRole, msg.sender),
+            "Must have Lawyer role to create a case"
+        );
+
+        Case memory c = Case(
+            caseCount,
+            description,
+            CaseStatus.Open,
+            client,
+            block.timestamp,
+            0,
+            block.timestamp,
+            new uint256[](0),
+            new address[](0)
+        );
+
+        cases[caseCount] = c;
+        caseCount++;
+
+        emit CaseCreated(c.id, msg.sender, c);
+    }
+
+    function closeCase(uint256 id) external {
+        require(
+            hasRole(LawyerRole, msg.sender) || hasRole(JudgeRole, msg.sender),
+            "Must have Lawyer/Judge role to close a case"
+        );
+        require(
+            cases[id].status == CaseStatus.Open,
+            "Case must be open to close"
+        );
+
+        cases[id].status = CaseStatus.Closed;
+        cases[id].closedAt = block.timestamp;
+
+        emit CaseClosed(id, msg.sender, cases[id]);
+    }
+
+    function updateCaseDescription(
+        uint256 id,
+        string memory description
+    ) external {
+        require(
+            hasRole(LawyerRole, msg.sender) || hasRole(JudgeRole, msg.sender),
+            "Must have Lawyer/Judge role to update a case"
+        );
+
+        cases[id].description = description;
+        cases[id].updatedAt = block.timestamp;
+
+        emit CaseUpdated(id, msg.sender, cases[id]);
+    }
+
+    //Document Functions
+    function addCaseDocument(
+        uint256 id,
+        string memory name,
+        string memory cid
+    ) external {
+        Case storage c = cases[id];
+        bool authorized = false;
+
+        for (uint256 i = 0; i < c.lawyers.length; i++) {
+            if (c.lawyers[i] == msg.sender) {
+                authorized = true;
                 break;
             }
         }
 
-        // Check if the msg.sender is a judge
-        if (hasRole(JudgeRole, msg.sender)) {
-            isJudge = true;
+        require(
+            c.client == msg.sender || authorized,
+            "Must be client or lawyer to add document"
+        );
+
+        Document memory d = Document(
+            documentCount,
+            name,
+            cid,
+            new address[](0),
+            block.timestamp,
+            msg.sender
+        );
+
+        documents[documentCount] = d;
+        documentCount++;
+
+        c.documents.push(d.id);
+
+        emit CaseUpdated(id, msg.sender, c);
+    }
+
+    function deleteCaseDocument(uint256 id, uint256 docId) external {
+        Case storage c = cases[id];
+        Document storage d = documents[docId];
+        bool authorized = false;
+
+        for (uint256 i = 0; i < d.authorized.length; i++) {
+            if (d.authorized[i] == msg.sender) {
+                authorized = true;
+                break;
+            }
         }
 
         require(
-            isLawyer || isJudge,
-            "Only lawyers or judges can perform this action"
+            c.client == msg.sender || authorized,
+            "Must be client or lawyer to delete document"
         );
-        _;
+
+        delete documents[docId];
+
+        emit CaseUpdated(id, msg.sender, c);
     }
 
-    function changeCaseDescription(
-        uint256 caseId,
-        string memory description
-    ) public onlyCaseLawyerOrJudge(caseId) returns (Case memory) {
-        require(cases[caseId].id == caseId, "Case does not exist");
-        cases[caseId].description = description;
-        cases[caseId].updatedDate = block.timestamp;
-
-        return cases[caseId];
-    }
-
-    function changeCaseStatus(
-        uint256 caseId,
-        bool closed
-    ) public onlyRole(JudgeRole) {
-        require(cases[caseId].id == caseId, "Case does not exist");
+    function addDocumentAuthorized(
+        uint256 id,
+        uint256 docId,
+        address user
+    ) external {
+        Case storage c = cases[id];
         require(
-            closed && cases[caseId].status == CaseStatus.Closed,
-            "The case is already closed"
-        );
-        require(
-            !closed && cases[caseId].status == CaseStatus.Open,
-            "The case is already open"
+            c.client == msg.sender,
+            "Must be client to add authorized user"
         );
 
-        cases[caseId].status = closed ? CaseStatus.Closed : CaseStatus.Open;
-    }
-
-    // Function to add a document to a case
-    function addDocument(
-        uint256 caseId,
-        string memory title,
-        string memory description,
-        string memory content,
-        bool isPublic
-    ) public onlyCaseLawyerOrJudge(caseId) returns (Document memory) {
-        // Check if the case exists
-        require(cases[caseId].id == caseId, "Case does not exist");
-
-        // Generate a unique document ID
-        uint256 docId = getNextDocumentId();
-
-        // Create the document
-        uint256[] memory caseIds = new uint256[](1); // Create a dynamic array
-        caseIds[0] = caseId; // Add the caseId to the array
-
-        Document memory newDocument = Document({
-            id: docId,
-            cases: caseIds, // Assign the dynamic array
-            title: title,
-            description: description,
-            uploadedBy: msg.sender,
-            uploadedAt: block.timestamp,
-            content: content,
-            isPublic: isPublic
-        });
-
-        // Store the document in the mapping
-        documents[docId] = newDocument;
-        
-        emit DocumentCreated(newDocument);
-
-        return newDocument;
-    }
-
-    modifier onlyDocLawyerOrJudge(uint256 docId) {
-        bool isLawyer = false;
-        bool isJudge = false;
-
-        // Check if the msg.sender is a lawyer
-        if (documents[docId].uploadedBy == msg.sender) {
-            isLawyer = true;
+        for (uint256 i = 0; i < c.documents.length; i++) {
+            if (c.documents[i] == docId) {
+                documents[docId].authorized.push(user);
+                break;
+            }
         }
 
-        // Check if the msg.sender is a judge
-        if (hasRole(JudgeRole, msg.sender)) {
-            isJudge = true;
+        emit CaseUpdated(id, msg.sender, c);
+    }
+
+    function deleteDocumentAuthorized(
+        uint256 id,
+        uint256 docId,
+        address user
+    ) external {
+        Case storage c = cases[id];
+        require(
+            c.client == msg.sender,
+            "Must be client to delete authorized user"
+        );
+
+        for (uint256 i = 0; i < c.documents.length; i++) {
+            if (c.documents[i] == docId) {
+                for (
+                    uint256 j = 0;
+                    j < documents[docId].authorized.length;
+                    j++
+                ) {
+                    if (documents[docId].authorized[j] == user) {
+                        documents[docId].authorized[j] = documents[docId]
+                            .authorized[documents[docId].authorized.length - 1];
+                        documents[docId].authorized.pop();
+                        break;
+                    }
+                }
+                break;
+            }
+        }
+
+        emit CaseUpdated(id, msg.sender, c);
+    }
+
+    function addCaseLawyer(uint256 id, address lawyer) external {
+        Case storage c = cases[id];
+        require(c.client == msg.sender, "Must be client to add lawyer to case");
+
+        c.lawyers.push(lawyer);
+
+        emit CaseUpdated(id, msg.sender, c);
+    }
+
+    function deleteCaseLawyer(uint256 id, address lawyer) external {
+        Case storage c = cases[id];
+        require(
+            c.client == msg.sender,
+            "Must be client to delete lawyer from case"
+        );
+
+        for (uint256 i = 0; i < c.lawyers.length; i++) {
+            if (c.lawyers[i] == lawyer) {
+                c.lawyers[i] = c.lawyers[c.lawyers.length - 1];
+                c.lawyers.pop();
+                break;
+            }
+        }
+
+        emit CaseUpdated(id, msg.sender, c);
+    }
+
+    function getDocumentCID (uint256 id) external view returns (string memory) {
+        Document storage d = documents[id];
+        bool authorized = false;
+
+        for (uint256 i = 0; i < d.authorized.length; i++) {
+            if (d.authorized[i] == msg.sender) {
+                authorized = true;
+                break;
+            }
         }
 
         require(
-            isLawyer || isJudge,
-            "Only lawyers or judges can perform this action"
-        );
-        _;
-    }
-
-    // Function to get the next document ID
-    function getNextDocumentId() private returns (uint256) {
-        uint256 id = totalDocuments;
-        totalDocuments++;
-        return id;
-    }
-
-    function changeDocumentVisibility(
-        uint256 docId,
-        bool isPublic
-    ) public onlyDocLawyerOrJudge(docId) {
-        require(
-            documents[docId].isPublic == isPublic,
-            "The visibility is same"
+            msg.sender == d.uploadedBy || authorized || hasRole(JudgeRole, msg.sender) || hasRole(DetectiveRole, msg.sender),
+            "Must have Client/Lawyer/Judge/Detective role to get document cid"
         );
 
-        documents[docId].isPublic = isPublic;
+        return d.cid;
     }
-
-    function changeDocumentTitle(
-        uint256 docId,
-        string memory title
-    ) public onlyDocLawyerOrJudge(docId) {
-        documents[docId].title = title;
-        emit DocumentUpdated(documents[docId]);
-    }
-
-    function changeDocumentDescription(
-        uint256 docId,
-        string memory description
-    ) public onlyDocLawyerOrJudge(docId) {
-        documents[docId].description = description;
-        emit DocumentUpdated(documents[docId]);
-
-    }
-
-    function deleteDocument(uint256 docId) public onlyDocLawyerOrJudge(docId) {
-        require(documents[docId].id == docId, "Document does not exist");   
-        emit DocumentDeleted(documents[docId]);
-        delete documents[docId];   
-    }
-    
 }
