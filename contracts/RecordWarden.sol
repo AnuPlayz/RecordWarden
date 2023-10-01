@@ -186,8 +186,10 @@ contract RecordWarden is Permissions {
             "Must have Lawyer role to create a case"
         );
 
+        uint256 caseID = caseCount + 1;
+
         Case memory c = Case(
-            caseCount,
+            caseID,
             description,
             CaseStatus.Open,
             client,
@@ -200,7 +202,7 @@ contract RecordWarden is Permissions {
             new address[](0)
         );
 
-        cases[caseCount] = c;
+        cases[caseID] = c;
         caseCount++;
 
         emit CaseCreated(c.id, msg.sender, c);
