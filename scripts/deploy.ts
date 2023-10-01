@@ -22,7 +22,7 @@ async function main() {
   console.log("Lawyer role granted to", admin)
 
   console.log("Creating a case for Ani")
-  let createCase = await RecordWarden.createCase("Ani stole a buggati", admin)
+  let createCase = await RecordWarden.createCase("Ani stole a buggati", admin, new Date().getTime())
   await createCase.wait(2)
   console.log("Case created for Ani")
 

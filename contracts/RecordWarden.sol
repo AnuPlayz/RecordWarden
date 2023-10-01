@@ -25,6 +25,8 @@ struct Case {
     uint256 createdAt;
     uint256 closedAt;
     uint256 updatedAt;
+    address updatedBy;
+    uint256 nextHearing;
     uint256[] documents;
     address[] lawyers;
 }
@@ -173,8 +175,12 @@ contract RecordWarden is Permissions {
         emit UserUpdated(msg.sender, users[msg.sender]);
     }
 
-    //Case Functions
-    function createCase(string memory description, address client) external {
+    // Case Functions
+    function createCase(
+        string memory description,
+        address client,
+        uint256 nextHearing
+    ) external {
         require(
             hasRole(LawyerRole, msg.sender),
             "Must have Lawyer role to create a case"
@@ -188,6 +194,8 @@ contract RecordWarden is Permissions {
             block.timestamp,
             0,
             block.timestamp,
+            msg.sender,
+            nextHearing,
             new uint256[](0),
             new address[](0)
         );
@@ -214,6 +222,19 @@ contract RecordWarden is Permissions {
         emit CaseClosed(id, msg.sender, cases[id]);
     }
 
+    function updateNextHearing(uint256 id, uint256 nextHearing) external {
+        require(
+            hasRole(LawyerRole, msg.sender) || hasRole(JudgeRole, msg.sender),
+            "Must have Lawyer/Judge role to update a case"
+        );
+
+        cases[id].nextHearing = nextHearing;
+        cases[id].updatedAt = block.timestamp;
+        cases[id].updatedBy = msg.sender;
+
+        emit CaseUpdated(id, msg.sender, cases[id]);
+    }
+
     function updateCaseDescription(
         uint256 id,
         string memory description
@@ -225,6 +246,7 @@ contract RecordWarden is Permissions {
 
         cases[id].description = description;
         cases[id].updatedAt = block.timestamp;
+        cases[id].updatedBy = msg.sender;
 
         emit CaseUpdated(id, msg.sender, cases[id]);
     }
@@ -263,6 +285,8 @@ contract RecordWarden is Permissions {
         documentCount++;
 
         c.documents.push(d.id);
+        c.updatedAt = block.timestamp;
+        c.updatedBy = msg.sender;
 
         emit CaseUpdated(id, msg.sender, c);
     }
@@ -286,6 +310,9 @@ contract RecordWarden is Permissions {
 
         delete documents[docId];
 
+        c.updatedAt = block.timestamp;
+        c.updatedBy = msg.sender;
+
         emit CaseUpdated(id, msg.sender, c);
     }
 
@@ -306,6 +333,9 @@ contract RecordWarden is Permissions {
                 break;
             }
         }
+
+        c.updatedAt = block.timestamp;
+        c.updatedBy = msg.sender;
 
         emit CaseUpdated(id, msg.sender, c);
     }
@@ -339,6 +369,9 @@ contract RecordWarden is Permissions {
             }
         }
 
+        c.updatedAt = block.timestamp;
+        c.updatedBy = msg.sender;
+
         emit CaseUpdated(id, msg.sender, c);
     }
 
@@ -347,6 +380,8 @@ contract RecordWarden is Permissions {
         require(c.client == msg.sender, "Must be client to add lawyer to case");
 
         c.lawyers.push(lawyer);
+        c.updatedAt = block.timestamp;
+        c.updatedBy = msg.sender;
 
         emit CaseUpdated(id, msg.sender, c);
     }
@@ -366,10 +401,13 @@ contract RecordWarden is Permissions {
             }
         }
 
+        c.updatedAt = block.timestamp;
+        c.updatedBy = msg.sender;
+
         emit CaseUpdated(id, msg.sender, c);
     }
 
-    function getDocumentCID (uint256 id) external view returns (string memory) {
+    function getDocumentCID(uint256 id) external view returns (string memory) {
         Document storage d = documents[id];
         bool authorized = false;
 
@@ -381,7 +419,10 @@ contract RecordWarden is Permissions {
         }
 
         require(
-            msg.sender == d.uploadedBy || authorized || hasRole(JudgeRole, msg.sender) || hasRole(DetectiveRole, msg.sender),
+            msg.sender == d.uploadedBy ||
+                authorized ||
+                hasRole(JudgeRole, msg.sender) ||
+                hasRole(DetectiveRole, msg.sender),
             "Must have Client/Lawyer/Judge/Detective role to get document cid"
         );
 

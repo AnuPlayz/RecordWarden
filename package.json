@@ -8,7 +8,8 @@
   "scripts": {
     "compile": "npx hardhat compile",
     "source": "npx hardhat sourcify",
-    "deploy": "npx hardhat run scripts/deploy.ts"
+    "deploy": "npx hardhat run scripts/deploy.ts",
+    "abi": "npx thirdweb generate"
   },
   "dependencies": {
     "@thirdweb-dev/contracts": "^3.10.0"
