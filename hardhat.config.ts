@@ -2,7 +2,15 @@ import { HardhatUserConfig } from "hardhat/config";
 import "@nomicfoundation/hardhat-toolbox";
 
 const config: HardhatUserConfig = {
-  solidity: "0.8.19",
+  solidity: {
+    version: "0.8.19",
+    settings: {
+      optimizer: {
+        enabled: true,
+        runs: 200,
+      }
+    },
+  },
   defaultNetwork: "mumbai",
   networks: {
     hardhat: {},
@@ -13,7 +21,7 @@ const config: HardhatUserConfig = {
   },
   etherscan: {
     apiKey: "XNVCN1RSB7JVDWX9Y82KBJVZVW6XNDCEE3"
- }
+  },
 };
 
 export default config;

@@ -35,7 +35,7 @@ async function main() {
   console.log("RecordWarden deployed to:", addr);
 
   console.log("Granting lawyer role to", admin)
-  let addLawyer = await RecordWarden.addLawyer(admin)
+  let addLawyer = await RecordWarden.grantRole(await RecordWarden.LawyerRole(), admin)
   await addLawyer.wait(2)
   console.log("Lawyer role granted to", admin)
 

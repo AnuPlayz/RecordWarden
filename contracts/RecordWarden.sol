@@ -63,61 +63,6 @@ contract RecordWarden is Permissions {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
 
-    //Admin Functions
-    function addLawyer(address lawyer) external {
-        require(
-            hasRole(DEFAULT_ADMIN_ROLE, msg.sender),
-            "Must have admin role to add lawyer"
-        );
-
-        _setupRole(LawyerRole, lawyer);
-    }
-
-    function deleteLawyer(address lawyer) external {
-        require(
-            hasRole(DEFAULT_ADMIN_ROLE, msg.sender),
-            "Must have admin role to delete lawyer"
-        );
-
-        revokeRole(LawyerRole, lawyer);
-    }
-
-    function addJudge(address judge) external {
-        require(
-            hasRole(DEFAULT_ADMIN_ROLE, msg.sender),
-            "Must have admin role to add judge"
-        );
-
-        _setupRole(JudgeRole, judge);
-    }
-
-    function deleteJudge(address judge) external {
-        require(
-            hasRole(DEFAULT_ADMIN_ROLE, msg.sender),
-            "Must have admin role to delete judge"
-        );
-
-        revokeRole(JudgeRole, judge);
-    }
-
-    function addDetective(address detective) external {
-        require(
-            hasRole(DEFAULT_ADMIN_ROLE, msg.sender),
-            "Must have admin role to add detective"
-        );
-
-        _setupRole(DetectiveRole, detective);
-    }
-
-    function deleteDetective(address detective) external {
-        require(
-            hasRole(DEFAULT_ADMIN_ROLE, msg.sender),
-            "Must have admin role to delete detective"
-        );
-
-        revokeRole(DetectiveRole, detective);
-    }
-
     //User Functions
     function createUser(
         string memory name,
@@ -140,39 +85,30 @@ contract RecordWarden is Permissions {
         emit UserCreated(msg.sender, users[msg.sender]);
     }
 
-    function updateUserName(string memory name) external {
-        users[msg.sender].name = name;
-        emit UserUpdated(msg.sender, users[msg.sender]);
-    }
+    function updateUserField(
+        string memory field,
+        string memory value
+    ) external {
+        User storage user = users[msg.sender];
 
-    function updateUserUsername(string memory username) external {
-        require(
-            bytes(users[msg.sender].username).length == 0,
-            "Username already taken"
-        );
+        if (keccak256(bytes(field)) == keccak256(bytes("name"))) {
+            user.name = value;
+        } else if (keccak256(bytes(field)) == keccak256(bytes("username"))) {
+            require(bytes(user.username).length == 0, "Username already taken");
+            user.username = value;
+        } else if (keccak256(bytes(field)) == keccak256(bytes("avatar"))) {
+            user.avatar = value;
+        } else if (keccak256(bytes(field)) == keccak256(bytes("bio"))) {
+            user.bio = value;
+        } else if (keccak256(bytes(field)) == keccak256(bytes("location"))) {
+            user.location = value;
+        } else if (keccak256(bytes(field)) == keccak256(bytes("email"))) {
+            user.email = value;
+        } else {
+            revert("Invalid field name");
+        }
 
-        users[msg.sender].username = username;
-        emit UserUpdated(msg.sender, users[msg.sender]);
-    }
-
-    function updateUserAvatar(string memory avatar) external {
-        users[msg.sender].avatar = avatar;
-        emit UserUpdated(msg.sender, users[msg.sender]);
-    }
-
-    function updateUserBio(string memory bio) external {
-        users[msg.sender].bio = bio;
-        emit UserUpdated(msg.sender, users[msg.sender]);
-    }
-
-    function updateUserLocation(string memory location) external {
-        users[msg.sender].location = location;
-        emit UserUpdated(msg.sender, users[msg.sender]);
-    }
-
-    function updateUserEmail(string memory email) external {
-        users[msg.sender].email = email;
-        emit UserUpdated(msg.sender, users[msg.sender]);
+        emit UserUpdated(msg.sender, user);
     }
 
     // Case Functions
@@ -290,6 +226,8 @@ contract RecordWarden is Permissions {
         c.updatedAt = block.timestamp;
         c.updatedBy = msg.sender;
 
+        cases[id] = c;
+
         emit CaseUpdated(id, msg.sender, c);
     }
 
@@ -315,6 +253,8 @@ contract RecordWarden is Permissions {
         c.updatedAt = block.timestamp;
         c.updatedBy = msg.sender;
 
+        cases[id] = c;
+
         emit CaseUpdated(id, msg.sender, c);
     }
 
@@ -338,6 +278,8 @@ contract RecordWarden is Permissions {
 
         c.updatedAt = block.timestamp;
         c.updatedBy = msg.sender;
+
+        cases[id] = c;
 
         emit CaseUpdated(id, msg.sender, c);
     }
@@ -374,6 +316,8 @@ contract RecordWarden is Permissions {
         c.updatedAt = block.timestamp;
         c.updatedBy = msg.sender;
 
+        cases[id] = c;
+
         emit CaseUpdated(id, msg.sender, c);
     }
 
@@ -384,6 +328,8 @@ contract RecordWarden is Permissions {
         c.lawyers.push(lawyer);
         c.updatedAt = block.timestamp;
         c.updatedBy = msg.sender;
+
+        cases[id] = c;
 
         emit CaseUpdated(id, msg.sender, c);
     }
@@ -405,6 +351,8 @@ contract RecordWarden is Permissions {
 
         c.updatedAt = block.timestamp;
         c.updatedBy = msg.sender;
+
+        cases[id] = c;
 
         emit CaseUpdated(id, msg.sender, c);
     }
