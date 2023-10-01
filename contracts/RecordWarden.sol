@@ -89,7 +89,7 @@ contract RecordWarden is Permissions {
         string memory field,
         string memory value
     ) external {
-        User storage user = users[msg.sender];
+        User memory user = users[msg.sender];
 
         if (keccak256(bytes(field)) == keccak256(bytes("name"))) {
             user.name = value;
@@ -107,6 +107,8 @@ contract RecordWarden is Permissions {
         } else {
             revert("Invalid field name");
         }
+
+        users[msg.sender] = user;
 
         emit UserUpdated(msg.sender, user);
     }
@@ -140,6 +142,8 @@ contract RecordWarden is Permissions {
 
         cases[caseID] = c;
         caseCount++;
+
+        cases[c.id] = c;
 
         emit CaseCreated(c.id, msg.sender, c);
     }
@@ -232,8 +236,8 @@ contract RecordWarden is Permissions {
     }
 
     function deleteCaseDocument(uint256 id, uint256 docId) external {
-        Case storage c = cases[id];
-        Document storage d = documents[docId];
+        Case memory c = cases[id];
+        Document memory d = documents[docId];
         bool authorized = false;
 
         for (uint256 i = 0; i < d.authorized.length; i++) {
@@ -263,7 +267,7 @@ contract RecordWarden is Permissions {
         uint256 docId,
         address user
     ) external {
-        Case storage c = cases[id];
+        Case memory c = cases[id];
         require(
             c.client == msg.sender,
             "Must be client to add authorized user"
@@ -289,7 +293,7 @@ contract RecordWarden is Permissions {
         uint256 docId,
         address user
     ) external {
-        Case storage c = cases[id];
+        Case memory c = cases[id];
         require(
             c.client == msg.sender,
             "Must be client to delete authorized user"
@@ -358,7 +362,7 @@ contract RecordWarden is Permissions {
     }
 
     function getDocumentCID(uint256 id) external view returns (string memory) {
-        Document storage d = documents[id];
+        Document memory d = documents[id];
         bool authorized = false;
 
         for (uint256 i = 0; i < d.authorized.length; i++) {
