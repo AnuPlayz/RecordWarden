@@ -224,8 +224,8 @@ contract RecordWarden is Permissions {
 
     function updateNextHearing(uint256 id, uint256 nextHearing) external {
         require(
-            hasRole(LawyerRole, msg.sender) || hasRole(JudgeRole, msg.sender),
-            "Must have Lawyer/Judge role to update a case"
+            hasRole(JudgeRole, msg.sender),
+            "Must have Judge role to update a next hearing"
         );
 
         cases[id].nextHearing = nextHearing;
