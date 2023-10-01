@@ -2,6 +2,24 @@ import { ethers } from "hardhat";
 
 const wait = (ms: number) => new Promise(r => setTimeout(r, ms))
 
+const initalData = [
+  {
+    "description": "A copyright infringement case against a website for using unauthorized images. The plaintiff is a photographer.",
+  },
+  {
+    "description": "A trademark infringement case against a company for using a similar logo. The plaintiff is a clothing brand.",
+  },
+  {
+    "description": "A patent infringement case against a company for using a patented invention. The plaintiff is a biotech company.",
+  },
+  {
+    "description": "A contract dispute case between two companies over the terms of a contract. The plaintiff is a software company.",
+  },
+  {
+    "description": "A personal injury case against a company for negligence. The plaintiff is a construction worker.",
+  }
+]
+
 /**
  * Deploys the RecordWarden contract, grants lawyer role to an admin, creates a case for Ani,
  * adds evidence to the case and logs the case details.
@@ -26,13 +44,19 @@ async function main() {
   await createCase.wait(2)
   console.log("Case created for Ani")
 
-  let thisCase = await RecordWarden.cases(0)
+  let thisCase = await RecordWarden.cases(1)
   console.log("Case details:", thisCase)
 
   console.log("Adding evidence to case")
-  let addEvidence = await RecordWarden.addCaseDocument(0, "ani.png", "bafybeiaqfndiuqfinovdjr7vrecruvm3csfofitl7swpyfvdr3uvwzqmsu")
+  let addEvidence = await RecordWarden.addCaseDocument(1, "ani.png", "bafybeiaqfndiuqfinovdjr7vrecruvm3csfofitl7swpyfvdr3uvwzqmsu")
   await addEvidence.wait(2)
   console.log("Evidence added to case")
+
+  console.log("Adding all inital cases")
+  for (let c of initalData) {
+    await RecordWarden.createCase(c.description, admin, new Date().getTime()).then(async x => await x.wait())
+  }
+  console.log("Added all inital cases")
 }
 
 // We recommend this pattern to be able to use async/await everywhere
