@@ -9,6 +9,7 @@
     "compile": "npx hardhat compile",
     "source": "npx hardhat sourcify",
     "deploy": "npx hardhat run scripts/deploy.ts",
+    "test": "npx hardhat run --network localhost scripts/test.ts",
     "abi": "npx thirdweb generate"
   },
   "dependencies": {
