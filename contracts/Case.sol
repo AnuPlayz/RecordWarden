@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.9;
-import "@thirdweb-dev/contracts/extension/recordWarden.sol";
+
 import "@openzeppelin/contracts/access/AccessControl.sol";
+import "./RecordWarden.sol";
 import "./Case.sol";
 import "./Document.sol";
 import "./User.sol";
@@ -12,10 +13,10 @@ enum CaseStatus {
 }
 
 struct Case {
-    // mapping(uint256 => uint256) hearings;
-    // uint256 hearingsCount;
-    // mapping(uint256 => address) lawyers;
-    // uint256 lawyersCount;
+    mapping(uint256 => uint256) hearings;
+    uint256 hearingsCount;
+    mapping(uint256 => address) lawyers;
+    uint256 lawyersCount;
 
     uint256 id;
     string description;
@@ -30,16 +31,22 @@ struct Case {
 
 contract Cases {
     RecordWarden recordWarden;
+    Cases public cases;
+    Users public users;
+    Documents public documents;
 
     constructor(address _recordWarden){
         recordWarden = RecordWarden(_recordWarden);
     }
 
-    function linkContracts(address _cases, address _users, address _documents) public {
-        require(recordWarden.hasRole(recordWarden.DEFAULT_ADMIN_ROLE, msg.sender), "u are gay");
-
+    function linkContracts(address _cases, address _users, address _documents) external onlyAdmin {
         cases = Cases(_cases);
         users = Users(_users);
         documents = Documents(_documents);
+    }
+
+    modifier onlyAdmin() {
+        require(recordWarden.isAdmin(msg.sender), "Caller is not an admin");
+        _;
     }
 }

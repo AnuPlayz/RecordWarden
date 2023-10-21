@@ -33,30 +33,6 @@ async function main() {
 
   let addr = await RecordWarden.getAddress()
   console.log("RecordWarden deployed to:", addr);
-
-  console.log("Granting lawyer role to", admin)
-  let addLawyer = await RecordWarden.grantRole(await RecordWarden.LawyerRole(), admin)
-  await addLawyer.wait(2)
-  console.log("Lawyer role granted to", admin)
-
-  console.log("Creating a case for Ani")
-  let createCase = await RecordWarden.createCase("Ani stole a buggati", admin, new Date().getTime())
-  await createCase.wait(2)
-  console.log("Case created for Ani")
-
-  let thisCase = await RecordWarden.cases(1)
-  console.log("Case details:", thisCase)
-
-  console.log("Adding evidence to case")
-  let addEvidence = await RecordWarden.addCaseDocument(1, "ani.png", "bafybeiaqfndiuqfinovdjr7vrecruvm3csfofitl7swpyfvdr3uvwzqmsu")
-  await addEvidence.wait(2)
-  console.log("Evidence added to case")
-
-  console.log("Adding all inital cases")
-  for (let c of initalData) {
-    await RecordWarden.createCase(c.description, admin, new Date().getTime()).then(async x => await x.wait())
-  }
-  console.log("Added all inital cases")
 }
 
 // We recommend this pattern to be able to use async/await everywhere

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.9;
-import "@thirdweb-dev/contracts/extension/Permissions.sol";
+import "./RecordWarden.sol";
 import "./Case.sol";
 import "./Document.sol";
 import "./User.sol";
@@ -18,12 +18,23 @@ struct Document {
 } 
 
 contract Documents {
-    Permissions public permissions;
+    RecordWarden public recordWarden;
     Cases public cases;
-    Users public user;
+    Users public users;
     Documents public documents;
 
-    constructor(address _permissions){
-        permissions = Permissions(_permissions);
+    constructor(address _recordWarden){
+        recordWarden = RecordWarden(_recordWarden);
+    }
+
+    function linkContracts(address _cases, address _users, address _documents) external onlyAdmin {
+        cases = Cases(_cases);
+        users = Users(_users);
+        documents = Documents(_documents);
+    }
+
+    modifier onlyAdmin() {
+        require(recordWarden.isAdmin(msg.sender), "Caller is not an admin");
+        _;
     }
 }
